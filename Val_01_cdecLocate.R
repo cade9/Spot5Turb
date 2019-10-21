@@ -1,4 +1,4 @@
-# Title: Val_Step1_cdecLocate
+# Title: Val_01_cdecLocate.R (Old:Val_Step1_cdecLocate)
 # Purpose: Create cdec location files, this uses the csv provided with lat long information
 # on the cdec website and filters it for stations that collect turbidity 
 # and crops it within the s5 boundary
@@ -6,7 +6,7 @@
 # the string extracting file
 # Author: Christiana Ade
 # Date: 8/9/2019
-# Modified: 9/22/2019 (just notes)
+# Modified: 10/21/2019 (just notes)
 ####################################################################################
 ## require packages
 require(raster)
@@ -33,6 +33,10 @@ s5box <- readOGR("./Data/Vector/s5t5_swath.shp")
 #3) sensor ids for turbidity
 id <- str_c("27,","221,",sep = "|")
 
+#4) Start end of the study period
+### to remove stations that were installed after the S5T5 study date
+endSP <- date("2015-09-03")
+
 #### OUTPUT FILES ####
 # 1) out directory for vector files
 outDir <- "./Data/Vector"
@@ -56,7 +60,11 @@ durFil <- function(df) {
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#### 10/20
+#### 10/21/2019
+# Data was re-written as "cdec_turbidity_stations_s5t5_oct21"
+# this excludes 9 stations that had end or start dates outside
+# the range of this project
+# 10/20
 # previous versions did not have ", after the numbers in id
 # a new line was added to remove stations that were not 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,17 +93,20 @@ statInfo <- lapply(statInfo,durFil)
 statInfo <- mapply(cbind, statInfo, "STA"=staId, SIMPLIFY=F) %>% bind_rows() %>% filter(!duration == "daily")
 
 #### Bind Cdec Station Information tgoether and change column names ####
-cdecTurb <- cdecTurb %>% 
+cdecTurb2 <- cdecTurb %>% 
   # join station information that includes the sensor start and end date, ntu/fnu. and number of sensor
   left_join(statInfo) %>%
   # rename columns
   rename("turbNum" = sensor_number, turbUnits = sensor_units, sensStart = start, sensEnd = end) %>%
-  dplyr::select(-sensor_name) 
+  dplyr::select(-sensor_name) %>%
+  # filter sensors that took place before the study period start
+  filter(!sensStart > endSP ) %>%
+  filter(!sensEnd < endSP )
 # anything that has and end date of 10/21/2019 makes the sensors is still collecting data
   #mutate(end = ifelse(end >= Sys.Date()))
 
 #### change to spatial points dataframe and project ####
-cdec.spdf <- SpatialPointsDataFrame(cdecTurb[, c("Longitude", "Latitude")],data = cdecTurb[1:ncol(cdecTurb)])
+cdec.spdf <- SpatialPointsDataFrame(cdecTurb2[, c("Longitude", "Latitude")],data = cdecTurb2[1:ncol(cdecTurb2)])
 # need to assign the cordinates as lat and long 
 proj4string(cdec.spdf) = CRS("+proj=longlat +datum=WGS84")
 # transform to state projection
