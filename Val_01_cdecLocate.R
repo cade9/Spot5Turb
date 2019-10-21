@@ -31,8 +31,8 @@ cdecStat <- read_csv("./Data/Ancil/Cdec_Stations.csv",
 s5box <- readOGR("./Data/Vector/s5t5_swath.shp")
 
 #3) sensor ids for turbidity
-id <- str_c("27,","221,",sep = "|")
-
+#id <- str_c("(?m)^27$","221",sep = "|")
+id <- str_c("27","221",sep = "|")
 #4) Start end of the study period
 ### to remove stations that were installed after the S5T5 study date
 endSP <- date("2015-09-03")
@@ -41,7 +41,7 @@ endSP <- date("2015-09-03")
 # 1) out directory for vector files
 outDir <- "./Data/Vector"
 # 2) out directory for final cdec shapefile
-outShp <- "cdec_turbidity_stations_s5t5_oct21"
+outShp <- "cdec_turbidity_stations_s5t5"
 
 #### USER DEFINED FUNCTIONS ####
 durFil <- function(df) {
@@ -61,7 +61,7 @@ durFil <- function(df) {
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #### 10/21/2019
-# Data was re-written as "cdec_turbidity_stations_s5t5_oct21"
+# Data was re-written as "cdec_turbidity_stations_s5t5"
 # this excludes 9 stations that had end or start dates outside
 # the range of this project
 # 10/20
@@ -76,6 +76,7 @@ durFil <- function(df) {
 #### Only select turbidity stations from cdec ####
 cdecTurb <- cdecStat %>% 
   # from the sensors column  match either 27 or 221. #! this could have problems bec is not exact match
+  # this is just to shorten the list from 345, but we could also just query for the keyword turbidity 
   filter(str_detect(Sensors,id)) #%>%
   # # add column that has which turbidity station a sensor has
   # mutate(turbNum = str_extract(Sensors, "(27)|(221)"),
